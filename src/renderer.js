@@ -8,32 +8,26 @@ import {
 } from './renderPolicy.js';
 import { validateUrl } from './urlPolicy.js';
 
-async function installRequestGuard(page, initialHostname, urlValidator) {
+async function installRequestGuard(context, initialHostname, urlValidator) {
   let requestCount = 0;
   let navigationRequestCount = 0;
   let policyError = null;
-  page.on('request', (request) => {
-    const isDocumentNavigation = request.isNavigationRequest() || request.resourceType() === 'document';
-    if (!isDocumentNavigation) return;
-    navigationRequestCount += 1;
-    if (navigationRequestCount <= getMaxRedirects() + 1) return;
-    policyError = createNavigationBlockedError();
-    void page.close().catch(() => {});
-  });
+  let mainPage = null;
 
-  await page.route('**/*', async (route) => {
+  await context.route('**/*', async (route) => {
     const request = route.request();
     const requestUrl = request.url();
     if (!/^https?:/i.test(requestUrl)) return route.continue();
     const isDocumentNavigation = request.isNavigationRequest() || request.resourceType() === 'document';
+    const isMainPageNavigation = isDocumentNavigation && belongsToPage(request, mainPage);
     requestCount += 1;
     if (requestCount > getMaxBrowserRequests()) {
       policyError = createRequestLimitError();
       await route.abort('blockedbyclient').catch(() => {});
-      await page.close().catch(() => {});
+      await context.close().catch(() => {});
       return undefined;
     }
-    if (isDocumentNavigation && countRedirects(request) > getMaxRedirects()) {
+    if (isMainPageNavigation && countRedirects(request) > getMaxRedirects()) {
       policyError = createNavigationBlockedError();
       return route.abort('blockedbyclient');
     }
@@ -42,10 +36,35 @@ async function installRequestGuard(page, initialHostname, urlValidator) {
       allowedNavigationHost: isDocumentNavigation ? initialHostname : null,
     });
     if (validation.valid) return route.continue();
-    if (isDocumentNavigation) policyError = createNavigationBlockedError();
+    if (isMainPageNavigation) policyError = createNavigationBlockedError();
     return route.abort('blockedbyclient');
   });
-  return { getPolicyError: () => policyError };
+  await context.routeWebSocket('**/*', (webSocketRoute) => (
+    webSocketRoute.close({ code: 1008, reason: 'Blocked by render policy' })
+  ));
+  return {
+    getPolicyError: () => policyError,
+    setMainPage(page) {
+      mainPage = page;
+      page.on('request', (request) => {
+        const isDocumentNavigation = request.isNavigationRequest() || request.resourceType() === 'document';
+        if (!isDocumentNavigation) return;
+        navigationRequestCount += 1;
+        if (navigationRequestCount <= getMaxRedirects() + 1) return;
+        policyError = createNavigationBlockedError();
+        void page.close().catch(() => {});
+      });
+    },
+  };
+}
+
+function belongsToPage(request, page) {
+  if (!page) return false;
+  try {
+    return request.frame().page() === page;
+  } catch {
+    return false;
+  }
 }
 
 function createNavigationBlockedError() {
@@ -73,10 +92,11 @@ export function countRedirects(request) {
 export async function renderDocument(url, validatedHostname, options = {}) {
   const browser = options.browser || await getBrowser();
   const urlValidator = options.validateUrl || validateUrl;
-  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const context = await browser.newContext({ reducedMotion: 'reduce', serviceWorkers: 'block' });
   try {
+    const requestGuard = await installRequestGuard(context, validatedHostname, urlValidator);
     const page = await context.newPage();
-    const requestGuard = await installRequestGuard(page, validatedHostname, urlValidator);
+    requestGuard.setMainPage(page);
     const startedAt = Date.now();
     let response;
     try {

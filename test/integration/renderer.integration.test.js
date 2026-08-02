@@ -7,6 +7,10 @@ import { renderDocument } from '../../src/renderer.js';
 
 let server;
 let port;
+let probeServer;
+let probePort;
+let privateProbeHits = 0;
+let websocketUpgradeHits = 0;
 let blockedSubresourceHits = 0;
 let stormResourceHits = 0;
 const pendingResponses = new Set();
@@ -65,6 +69,17 @@ function fixtureHandler(req, res) {
       stormResourceHits += 1;
       res.writeHead(204);
       return res.end();
+    case '/private-popup':
+      return html(res, 200, `<!doctype html><html><body>Popup blocked<script>window.open("http://127.0.0.1:${probePort}/popup");</script></body></html>`);
+    case '/private-websocket':
+      return html(res, 200, `<!doctype html><html><body>WebSocket blocked<script>const socket=new WebSocket("ws://127.0.0.1:${probePort}/socket");socket.onerror=()=>document.body.dataset.blocked="true";</script></body></html>`);
+    case '/service-worker':
+      return html(res, 200, '<!doctype html><html><body>Service worker blocked<script>navigator.serviceWorker.register("/egress-sw.js").then(()=>navigator.serviceWorker.ready).then(()=>fetch("/sw-trigger")).catch(()=>{document.body.dataset.blocked="true";});</script></body></html>');
+    case '/egress-sw.js':
+      res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+      return res.end(`self.addEventListener("install",event=>event.waitUntil(self.skipWaiting()));self.addEventListener("activate",event=>event.waitUntil(self.clients.claim()));self.addEventListener("fetch",event=>{if(new URL(event.request.url).pathname==="/sw-trigger")event.respondWith(fetch("http://127.0.0.1:${probePort}/service-worker"));});`);
+    case '/sw-trigger':
+      return html(res, 200, '<!doctype html><html><body>Direct fallback</body></html>');
     default:
       return html(res, 404, '<!doctype html><html><body>Unknown fixture</body></html>');
   }
@@ -82,7 +97,7 @@ async function localFixtureValidator(rawUrl, options = {}) {
     return { valid: false, status: 400, error: 'Invalid URL' };
   }
   const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
-  if (!['http:', 'https:'].includes(parsed.protocol) || hostname !== '127.0.0.1') {
+  if (!['http:', 'https:'].includes(parsed.protocol) || hostname !== '127.0.0.1' || parsed.port !== String(port)) {
     return { valid: false, status: 403, error: 'Blocked fixture destination' };
   }
   if (options.allowedNavigationHost && hostname !== options.allowedNavigationHost) {
@@ -120,6 +135,20 @@ async function getAvailablePort() {
 }
 
 before(async () => {
+  probeServer = http.createServer((_req, res) => {
+    privateProbeHits += 1;
+    res.writeHead(204);
+    res.end();
+  });
+  probeServer.on('upgrade', (_req, socket) => {
+    websocketUpgradeHits += 1;
+    socket.destroy();
+  });
+  await new Promise((resolve, reject) => {
+    probeServer.once('error', reject);
+    probeServer.listen(0, '127.0.0.1', resolve);
+  });
+  probePort = probeServer.address().port;
   server = http.createServer(fixtureHandler);
   await new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -132,6 +161,7 @@ after(async () => {
   for (const response of pendingResponses) response.destroy();
   await closeBrowser();
   await new Promise((resolve) => server.close(resolve));
+  await new Promise((resolve) => probeServer.close(resolve));
 });
 
 test('real Chromium release fixture matrix', async (t) => {
@@ -177,6 +207,23 @@ test('real Chromium release fixture matrix', async (t) => {
     const result = await render('/blocked-subresource');
     assert.equal(blockedSubresourceHits, 0);
     assert.doesNotMatch(result.entry.html, /Compromised/);
+  });
+
+  await t.test('blocks popup, WebSocket, and service-worker egress', async () => {
+    privateProbeHits = 0;
+    websocketUpgradeHits = 0;
+
+    const popup = await render('/private-popup');
+    assert.match(popup.entry.html, /Popup blocked/);
+
+    const websocket = await render('/private-websocket');
+    assert.match(websocket.entry.html, /WebSocket blocked/);
+
+    const serviceWorker = await render('/service-worker');
+    assert.match(serviceWorker.entry.html, /Service worker blocked/);
+
+    assert.equal(privateProbeHits, 0);
+    assert.equal(websocketUpgradeHits, 0);
   });
 
   await t.test('bounds per-render browser requests', async () => {

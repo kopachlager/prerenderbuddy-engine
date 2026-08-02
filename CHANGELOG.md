@@ -2,6 +2,12 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the initial pre-1.0 stabilization period.
 
+## Unreleased
+
+- Move HTTP(S) interception to the browser context so the first request from a popup cannot bypass destination validation.
+- Block browser WebSocket connections and disable service workers to keep every supported outbound path inside the render policy.
+- Add real Chromium regressions that verify popup, WebSocket, and service-worker attempts cannot reach a private probe server.
+
 ## 0.1.0 - 2026-08-02
 
 - Initial open-source engine release.
