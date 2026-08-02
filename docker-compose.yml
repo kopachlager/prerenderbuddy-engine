@@ -1,11 +1,6 @@
 services:
   engine:
-    build:
-      context: .
-      args:
-        ENGINE_VERSION: "0.1.1"
-        VCS_REF: ${ENGINE_VCS_REF:-local}
-    image: prerenderbuddy/engine:local
+    image: ghcr.io/kopachlager/prerenderbuddy-engine:${ENGINE_IMAGE_TAG:-v0.1.2}
     init: true
     restart: unless-stopped
     env_file:

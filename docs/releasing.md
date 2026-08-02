@@ -20,11 +20,11 @@ Create one annotated tag from the exact `main` commit that passed the gate:
 git switch main
 git pull --ff-only
 git status --short
-git tag -a v0.1.1 -m "Prerender Buddy Engine 0.1.1 alpha"
-git push origin v0.1.1
+git tag -a v0.1.2 -m "Prerender Buddy Engine 0.1.2 alpha"
+git push origin v0.1.2
 ```
 
-Pushing a `v*` tag starts the tagged-artifact workflow. The workflow reconstructs the repository with `git archive`, performs a fresh install, runs unit and real-Chromium integration tests, audits dependencies, builds and smoke-tests the runtime image, generates an SPDX dependency SBOM and checksums, creates GitHub build-provenance attestations, then publishes the prerelease.
+Pushing a `v*` tag starts the tagged-artifact workflow. The workflow reconstructs the repository with `git archive`, performs a fresh install, runs unit and real-Chromium integration tests, audits dependencies, builds and smoke-tests the runtime image, publishes a public immutable multi-architecture GHCR image with provenance and an SBOM, verifies both supported platforms without registry authentication, generates a dependency SBOM and checksums for the downloadable assets, creates GitHub build-provenance attestations, then publishes the prerelease.
 
 Do not create the GitHub Release manually while that workflow is running. If the workflow fails, leave the tag without a release, diagnose the failure, and never move or overwrite the published tag. Fix the issue on `main` and issue the next semantic version.
 
@@ -33,23 +33,24 @@ Do not create the GitHub Release manually while that workflow is running. If the
 Download the release archive and checksum into an empty temporary directory:
 
 ```bash
-gh release download v0.1.1 \
+gh release download v0.1.2 \
   --repo kopachlager/prerenderbuddy-engine \
-  --pattern 'prerenderbuddy-engine-0.1.1.tar.gz' \
-  --pattern 'prerenderbuddy-engine-0.1.1.spdx.json' \
+  --pattern 'prerenderbuddy-engine-0.1.2.tar.gz' \
+  --pattern 'prerenderbuddy-engine-0.1.2.spdx.json' \
+  --pattern 'docker-compose.yml' \
+  --pattern 'prerenderbuddy.env.example' \
   --pattern 'SHA256SUMS'
 sha256sum --check SHA256SUMS
-gh attestation verify prerenderbuddy-engine-0.1.1.tar.gz --repo kopachlager/prerenderbuddy-engine
-gh attestation verify prerenderbuddy-engine-0.1.1.spdx.json --repo kopachlager/prerenderbuddy-engine
-tar -xzf prerenderbuddy-engine-0.1.1.tar.gz
-cd prerenderbuddy-engine-0.1.1
-cp .env.example .env
+gh attestation verify prerenderbuddy-engine-0.1.2.tar.gz --repo kopachlager/prerenderbuddy-engine
+gh attestation verify prerenderbuddy-engine-0.1.2.spdx.json --repo kopachlager/prerenderbuddy-engine
+cp prerenderbuddy.env.example .env
 ```
 
 Set a new 32-character-or-longer `PRERENDER_TOKEN` and exact `ALLOWED_DOMAINS`, then verify one-command startup:
 
 ```bash
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 docker compose ps
 curl --fail http://127.0.0.1:3000/ready
 ```

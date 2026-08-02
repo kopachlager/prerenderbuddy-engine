@@ -1,0 +1,8 @@
+services:
+  engine:
+    build:
+      context: .
+      args:
+        ENGINE_VERSION: "0.1.2"
+        VCS_REF: ${ENGINE_VCS_REF:-local}
+    image: prerenderbuddy/engine:local

@@ -9,6 +9,7 @@ permissions:
   contents: write
   id-token: write
   attestations: write
+  packages: write
 
 jobs:
   tagged-artifact:
@@ -47,9 +48,15 @@ jobs:
             --output="$artifact" \
             "$GITHUB_REF_NAME"
           tar -xzf "$artifact" -C "$source_dir"
+          compose_asset="${RUNNER_TEMP}/docker-compose.yml"
+          env_asset="${RUNNER_TEMP}/prerenderbuddy.env.example"
+          cp "$source_dir/prerenderbuddy-engine-$version/docker-compose.yml" "$compose_asset"
+          cp "$source_dir/prerenderbuddy-engine-$version/.env.example" "$env_asset"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
           echo "source_dir=$source_dir/prerenderbuddy-engine-$version" >> "$GITHUB_OUTPUT"
+          echo "compose_asset=$compose_asset" >> "$GITHUB_OUTPUT"
+          echo "env_asset=$env_asset" >> "$GITHUB_OUTPUT"
 
       - name: Test clean tagged source
         working-directory: ${{ steps.archive.outputs.source_dir }}
@@ -88,6 +95,44 @@ jobs:
           docker logs engine-release-smoke
           exit 1
 
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish versioned runtime image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: ${{ steps.archive.outputs.source_dir }}
+          target: runtime
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          build-args: |
+            ENGINE_VERSION=${{ steps.archive.outputs.version }}
+            VCS_REF=${{ github.sha }}
+          provenance: mode=max
+          sbom: true
+
+      - name: Make the container public and verify its platforms
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+        shell: bash
+        run: |
+          gh api \
+            --method PATCH \
+            /user/packages/container/prerenderbuddy-engine \
+            --field visibility=public >/dev/null
+          docker logout ghcr.io
+          platforms="$(docker buildx imagetools inspect "$IMAGE")"
+          grep -q 'Platform:  linux/amd64' <<< "$platforms"
+          grep -q 'Platform:  linux/arm64' <<< "$platforms"
+
       - name: Create SBOM and checksums
         id: checksum
         working-directory: ${{ steps.archive.outputs.source_dir }}
@@ -99,7 +144,9 @@ jobs:
           cd "$(dirname "${{ steps.archive.outputs.artifact }}")"
           sha256sum \
             "$(basename "${{ steps.archive.outputs.artifact }}")" \
-            "$(basename "$sbom_file")" > "$checksum_file"
+            "$(basename "$sbom_file")" \
+            "$(basename "${{ steps.archive.outputs.compose_asset }}")" \
+            "$(basename "${{ steps.archive.outputs.env_asset }}")" > "$checksum_file"
           echo "file=$checksum_file" >> "$GITHUB_OUTPUT"
           echo "sbom=$sbom_file" >> "$GITHUB_OUTPUT"
 
@@ -118,6 +165,8 @@ jobs:
             "${{ steps.archive.outputs.artifact }}" \
             "${{ steps.checksum.outputs.sbom }}" \
             "${{ steps.checksum.outputs.file }}" \
+            "${{ steps.archive.outputs.compose_asset }}" \
+            "${{ steps.archive.outputs.env_asset }}" \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --prerelease \

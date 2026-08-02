@@ -2,16 +2,20 @@
 
 ## Install
 
-Install a reviewed release tag, not a moving branch:
+Install an immutable, reviewed release image rather than a moving branch:
 
 ```bash
-git clone --branch v0.1.1 --depth 1 https://github.com/kopachlager/prerenderbuddy-engine.git
-cd prerenderbuddy-engine
+curl --fail --location --output docker-compose.yml \
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/docker-compose.yml
+curl --fail --location --output .env.example \
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/prerenderbuddy.env.example
 cp .env.example .env
 openssl rand -hex 32
 ```
 
-Put the generated value in `PRERENDER_TOKEN`, set exact hostnames in `ALLOWED_DOMAINS`, then run `docker compose up --build -d`. Confirm both `docker compose ps` and `curl --fail http://127.0.0.1:3000/ready` before sending traffic.
+Put the generated value in `PRERENDER_TOKEN`, set exact hostnames in `ALLOWED_DOMAINS`, then run `docker compose pull && docker compose up -d`. Confirm both `docker compose ps` and `curl --fail http://127.0.0.1:3000/ready` before sending traffic.
+
+The Compose file defaults to `ghcr.io/kopachlager/prerenderbuddy-engine:v0.1.2`. Set `ENGINE_IMAGE_TAG` only when deliberately testing another published tag. To build locally, clone the matching release tag and run `docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d`.
 
 ## Configuration
 
@@ -60,15 +64,15 @@ The cache is process-local and disappears when the container restarts. Run one i
 Back up `.env`, record the current tag, and review the target release notes. Upgrade explicitly between immutable tags:
 
 ```bash
-git fetch --tags --prune
-git switch --detach v0.1.1
-docker compose build --pull
+curl --fail --location --output docker-compose.yml \
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/docker-compose.yml
+docker compose pull
 docker compose up -d
 docker compose ps
 curl --fail http://127.0.0.1:3000/ready
 ```
 
-Render one representative allowed URL before restoring crawler traffic. To roll back, switch to the recorded prior tag and repeat the build and readiness checks. The cache is memory-only, so there is no data migration.
+Render one representative allowed URL before restoring crawler traffic. To roll back, restore the prior Compose file or set its immutable image tag and repeat the pull and readiness checks. The cache is memory-only, so there is no data migration.
 
 ## Troubleshooting
 
