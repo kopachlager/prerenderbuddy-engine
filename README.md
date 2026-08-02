@@ -5,6 +5,8 @@
 
 A secure, self-hosted rendering engine that turns JavaScript applications into crawler-readable HTML. It uses Playwright Chromium, keeps a bounded in-memory cache, coalesces duplicate requests, and preserves the rendered document's HTTP status.
 
+The supported distribution is the versioned Docker image published on GitHub Container Registry. The Node package metadata is private and is not an npm installation interface.
+
 This repository is the standalone engine. The managed [Prerender Buddy](https://prerenderbuddy.com) service adds hosted routing, scheduling, monitoring, team workflows, billing, automatic scaling, and operational support.
 
 ## Quick start
@@ -12,8 +14,10 @@ This repository is the standalone engine. The managed [Prerender Buddy](https://
 Requirements: Docker Engine with Docker Compose.
 
 ```bash
-git clone --branch v0.1.1 --depth 1 https://github.com/kopachlager/prerenderbuddy-engine.git
-cd prerenderbuddy-engine
+curl --fail --location --output docker-compose.yml \
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/docker-compose.yml
+curl --fail --location --output .env.example \
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/prerenderbuddy.env.example
 cp .env.example .env
 openssl rand -hex 32
 ```
@@ -21,7 +25,8 @@ openssl rand -hex 32
 Put the generated token in `.env`, replace `ALLOWED_DOMAINS` with exact hostnames you control, then start the engine:
 
 ```bash
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 docker compose ps
 curl http://127.0.0.1:3000/health
 ```
@@ -46,6 +51,12 @@ The API also accepts `POST /render` with JSON:
 See [Self-hosting](docs/self-hosting.md) for configuration, reverse-proxy examples, updates, and operational guidance. The complete request, response, header, and error contract is in the [API reference](docs/api.md); common crawler-routing patterns are in [Integration](docs/integration.md).
 
 Release tags, clean-artifact verification, and rollback steps are documented in [Releasing](docs/releasing.md).
+
+To build the image from source instead, clone the matching release tag and run:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
+```
 
 ## API
 

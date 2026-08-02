@@ -2,6 +2,14 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the initial pre-1.0 stabilization period.
 
+## 0.1.2 - 2026-08-03
+
+- Publish immutable `linux/amd64` and `linux/arm64` runtime images to GitHub Container Registry with provenance and an image SBOM.
+- Make the versioned registry image the default Docker Compose installation path.
+- Attach the Compose and environment-example files directly to each GitHub release.
+- Preserve an explicit Compose override for developers who need to build the runtime image locally.
+- Mark the Node package as private because npm is not a supported engine distribution path.
+
 ## 0.1.1 - 2026-08-02
 
 - Move HTTP(S) interception to the browser context so the first request from a popup cannot bypass destination validation.
