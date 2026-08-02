@@ -13,12 +13,14 @@ The container reads these environment variables:
 | `HEADLESS` | `true` | Keep enabled in normal operation |
 | `RENDER_TIMEOUT_MS` | `20000` | Bounded between 1 and 120 seconds |
 | `RENDER_MAX_REDIRECTS` | `10` | Bounded between 0 and 20 hops |
+| `RENDER_MAX_REQUESTS` | `250` | Bounded between 10 and 2,000 HTTP(S) requests; exhaustion terminates the render |
 | `RENDER_MAX_CONCURRENCY` | `4` | Bounded between 1 and 20 |
 | `MAX_RENDERED_HTML_BYTES` | `5000000` | Bounded between 100 KB and 20 MB |
 | `CACHE_TTL_SECONDS` | `1800` | Bounded between 1 second and 7 days |
 | `CACHE_MAX_ENTRIES` | `500` | Bounded between 1 and 10,000 |
 | `CACHE_MAX_BYTES` | `100000000` | Bounded between 1 MB and 1 GB |
 | `ALLOWED_ORIGINS` | empty | Exact browser origins allowed by CORS |
+| `DNS_LOOKUP_TIMEOUT_MS` | `2000` | Bounded between 100 ms and 10 seconds |
 
 An entry in `ALLOWED_DOMAINS` permits only that exact hostname. List both apex and `www` hostnames if both should be rendered.
 
@@ -64,3 +66,5 @@ Pin a release tag rather than `main` in production.
 URL validation reduces SSRF risk but cannot replace network isolation. Put the container on a network that cannot reach cloud metadata services, internal control planes, databases, or private application networks. Permit outbound DNS and public HTTP/HTTPS only where practical.
 
 For stronger tenant isolation, run separate containers and tokens rather than sharing one engine between unrelated users.
+
+The detailed threat model, request-path review, accepted residual risks, and release evidence are maintained in [Security review](security-review.md).

@@ -69,10 +69,13 @@ The engine fails closed:
 - `ALLOWED_DOMAINS` is required unless `ALLOW_ANY_PUBLIC_DOMAIN=true` is explicitly set.
 - Localhost, private, link-local, reserved, multicast, and non-HTTP destinations are rejected.
 - Redirected top-level navigation cannot switch to another site and is limited to 10 hops by default.
+- DNS resolution has its own timeout and every render has a bounded HTTP(S) request budget.
 - Render concurrency, time, HTML size, cache entries, and cache bytes are bounded.
 - Browser CORS access is disabled unless exact origins are listed.
 
 Do not expose this container directly to the public internet. Put it behind a TLS reverse proxy or private network, keep the token server-side, and apply outbound firewall rules. Browser rendering untrusted pages is inherently risky; read [Security](SECURITY.md) before production use.
+
+The release-level threat model and residual-risk decision are documented in [Security review](docs/security-review.md).
 
 ## Scope of the open engine
 
@@ -89,8 +92,11 @@ npm ci
 npm run install:browsers
 cp .env.example .env
 npm test
+npm run test:integration
 npm start
 ```
+
+The integration command requires the matching Playwright browser. The reproducible release path uses the Docker `test` target documented in [Contributing](CONTRIBUTING.md).
 
 ## License
 

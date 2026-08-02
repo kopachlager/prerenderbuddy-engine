@@ -10,3 +10,5 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Public-network destination and redirect validation.
 - Bounded in-memory cache, render concurrency, output size, and timeouts.
 - Duplicate render coalescing, protected metrics, Docker Compose, and security guidance.
+- Exact-allowlist redirect enforcement, bounded DNS resolution, and a terminating per-render request budget.
+- Deterministic Chromium release fixtures for rendering, abuse boundaries, malformed responses, and shutdown.

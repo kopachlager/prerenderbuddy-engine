@@ -4,6 +4,16 @@ import { getAllowedDomains, parseBoolean } from './config.js';
 
 const MAX_URL_LENGTH = 4_096;
 
+function boundedInteger(value, fallback, min, max) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(Math.round(parsed), min), max);
+}
+
+export function getDnsLookupTimeoutMs() {
+  return boundedInteger(process.env.DNS_LOOKUP_TIMEOUT_MS, 2_000, 100, 10_000);
+}
+
 function normalizeHostname(hostname) {
   return String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
 }
@@ -55,9 +65,15 @@ function hostnameAllowed(hostname) {
   return getAllowedDomains().includes(normalizeHostname(hostname));
 }
 
-async function resolveAddresses(hostname, lookup = dns.lookup) {
+async function resolveAddresses(hostname, lookup = dns.lookup, timeoutMs = getDnsLookupTimeoutMs()) {
   if (ipaddr.isValid(hostname)) return [hostname];
-  const records = await lookup(hostname, { all: true, verbatim: true });
+  let timer;
+  const records = await Promise.race([
+    Promise.resolve().then(() => lookup(hostname, { all: true, verbatim: true })),
+    new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('DNS lookup timed out')), timeoutMs);
+    }),
+  ]).finally(() => clearTimeout(timer));
   return records.map((record) => record.address);
 }
 
@@ -93,7 +109,7 @@ export async function validateUrl(urlString, options = {}) {
   }
 
   try {
-    const addresses = await resolveAddresses(hostname, options.lookup);
+    const addresses = await resolveAddresses(hostname, options.lookup, options.lookupTimeoutMs);
     if (addresses.length === 0 || addresses.some(isBlockedIp)) {
       return { valid: false, status: 403, error: 'URL not allowed' };
     }
