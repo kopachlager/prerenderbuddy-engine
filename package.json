@@ -1,0 +1,48 @@
+{
+  "name": "@prerenderbuddy/engine",
+  "version": "0.1.0",
+  "description": "A secure, self-hosted rendering engine for serving crawler-readable HTML.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kopachlager/prerenderbuddy-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kopachlager/prerenderbuddy-engine/issues"
+  },
+  "homepage": "https://github.com/kopachlager/prerenderbuddy-engine#readme",
+  "keywords": [
+    "prerender",
+    "crawler",
+    "seo",
+    "playwright",
+    "self-hosted"
+  ],
+  "files": [
+    "src",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".env.example",
+    "NOTICE",
+    "docs"
+  ],
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "install:browsers": "playwright install chromium"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ipaddr.js": "2.4.0",
+    "playwright": "1.62.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}
