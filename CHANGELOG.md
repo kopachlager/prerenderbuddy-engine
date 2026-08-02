@@ -2,6 +2,11 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the initial pre-1.0 stabilization period.
 
+## 0.1.3 - 2026-08-03
+
+- Verify public GHCR access with an anonymous registry token instead of attempting to change user-package visibility with a repository-scoped workflow token.
+- Complete the container-backed Compose distribution after the `0.1.2` tag workflow stopped before creating its GitHub release.
+
 ## 0.1.2 - 2026-08-03
 
 - Publish immutable `linux/amd64` and `linux/arm64` runtime images to GitHub Container Registry with provenance and an image SBOM.
@@ -9,6 +14,8 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Attach the Compose and environment-example files directly to each GitHub release.
 - Preserve an explicit Compose override for developers who need to build the runtime image locally.
 - Mark the Node package as private because npm is not a supported engine distribution path.
+
+The `0.1.2` container image was published, but its tagged workflow stopped during package-visibility verification and did not create a GitHub release. Use `0.1.3` or newer.
 
 ## 0.1.1 - 2026-08-02
 

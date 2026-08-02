@@ -2,7 +2,7 @@
 
 Review date: 2026-08-02
 
-Candidate: `0.1.2` distribution pre-release
+Candidate: `0.1.3` distribution pre-release
 
 ## Decision
 

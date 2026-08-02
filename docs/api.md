@@ -7,7 +7,7 @@ The engine exposes an HTTP API on port `3000` by default. Except for liveness an
 `GET /health` returns process liveness and build identity:
 
 ```json
-{"ok":true,"service":"@prerenderbuddy/engine","version":"0.1.2"}
+{"ok":true,"service":"@prerenderbuddy/engine","version":"0.1.3"}
 ```
 
 `GET /ready` returns `200 {"ready":true}` when Chromium is connected, or `503 {"ready":false}`. These endpoints intentionally require no token so container orchestrators can call them.
