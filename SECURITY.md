@@ -13,3 +13,5 @@ We aim to acknowledge complete reports within five business days. Please allow t
 ## Deployment responsibility
 
 This software launches a browser against remote content. Domain allowlisting and destination validation reduce risk, but operators must also use authentication, TLS, rate limiting, least-privilege containers, and outbound network controls. Never deploy it as an unauthenticated public rendering proxy.
+
+See [Security and abuse-boundary review](docs/security-review.md) for the threat model, manual request-path review, implemented controls, residual risks, and verification procedure.

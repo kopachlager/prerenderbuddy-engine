@@ -108,3 +108,25 @@ test('cache read and clear endpoints do not trigger rendering', async () => {
     .set('Authorization', `Bearer ${token}`)
     .expect(404);
 });
+
+test('maps renderer policy failures to stable API statuses', async () => {
+  const cases = [
+    ['RENDER_TOO_LARGE', 'Error', 413, 'Rendered HTML exceeds the configured size limit'],
+    ['RENDER_NAVIGATION_BLOCKED', 'Error', 403, 'Render navigation blocked'],
+    ['RENDER_REQUEST_LIMIT', 'Error', 422, 'Render request limit exceeded'],
+    [undefined, 'TimeoutError', 504, 'Render timed out'],
+  ];
+  for (const [code, name, status, message] of cases) {
+    const error = new Error('fixture failure');
+    error.code = code;
+    error.name = name;
+    const response = await request(app(async () => { throw error; }))
+      .get('/render?url=https://example.com/')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(status);
+    assert.equal(response.body.error, message);
+    cache.clear();
+    resetRenderFlightsForTests();
+    resetRenderSlotsForTests();
+  }
+});

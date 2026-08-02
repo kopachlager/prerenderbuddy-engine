@@ -109,11 +109,21 @@ export function createRoutes(options = {}) {
         return sendOutcome(res, outcome, ttlSeconds);
       } catch (error) {
         const tooLarge = error?.code === 'RENDER_TOO_LARGE';
+        const navigationBlocked = error?.code === 'RENDER_NAVIGATION_BLOCKED';
+        const requestLimit = error?.code === 'RENDER_REQUEST_LIMIT';
         const timedOut = error?.name === 'TimeoutError';
         const outcome = {
           kind: 'error',
-          status: tooLarge ? 413 : timedOut ? 504 : 500,
-          error: tooLarge ? 'Rendered HTML exceeds the configured size limit' : timedOut ? 'Render timed out' : 'Render failed',
+          status: tooLarge ? 413 : navigationBlocked ? 403 : requestLimit ? 422 : timedOut ? 504 : 500,
+          error: tooLarge
+            ? 'Rendered HTML exceeds the configured size limit'
+            : navigationBlocked
+              ? 'Render navigation blocked'
+              : requestLimit
+                ? 'Render request limit exceeded'
+                : timedOut
+                  ? 'Render timed out'
+                  : 'Render failed',
         };
         flight.complete(outcome);
         return sendOutcome(res, outcome, ttlSeconds);

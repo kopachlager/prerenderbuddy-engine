@@ -2,7 +2,6 @@
 .github
 node_modules
 coverage
-test
 .env
 .env.*
 !.env.example

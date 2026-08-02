@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { isBlockedIp, validateUrl } from '../src/urlPolicy.js';
+import { getDnsLookupTimeoutMs, isBlockedIp, validateUrl } from '../src/urlPolicy.js';
 
 test('blocks private and reserved addresses', () => {
   for (const address of ['127.0.0.1', '10.1.2.3', '169.254.169.254', '192.168.1.1', '198.18.0.1', '198.51.100.2', '::1', '[::1]', '::ffff:7f00:1', 'fd00::1']) {
@@ -34,11 +34,56 @@ test('rejects unlisted hosts, credentials, private DNS, and cross-site redirects
   })).status, 403);
 });
 
+test('requires redirects to use an explicitly allowlisted hostname', async () => {
+  process.env.ALLOWED_DOMAINS = 'example.com';
+  const result = await validateUrl('https://www.example.com/', {
+    allowedNavigationHost: 'example.com',
+    lookup: async () => [{ address: '93.184.216.34', family: 4 }],
+  });
+  assert.equal(result.status, 403);
+});
+
 test('accepts a public IPv6 literal only with explicit unrestricted mode', async () => {
   process.env.ALLOWED_DOMAINS = '';
   process.env.ALLOW_ANY_PUBLIC_DOMAIN = 'true';
   const result = await validateUrl('https://[2606:2800:220:1:248:1893:25c8:1946]/');
   assert.equal(result.valid, true);
   assert.equal(result.hostname, '2606:2800:220:1:248:1893:25c8:1946');
+  delete process.env.ALLOW_ANY_PUBLIC_DOMAIN;
+});
+
+test('rejects mixed public/private DNS answers and bounded lookup stalls', async () => {
+  process.env.ALLOWED_DOMAINS = 'example.com';
+  const mixed = await validateUrl('https://example.com/', {
+    lookup: async () => [
+      { address: '93.184.216.34', family: 4 },
+      { address: '127.0.0.1', family: 4 },
+    ],
+  });
+  assert.equal(mixed.status, 403);
+
+  const stalled = await validateUrl('https://example.com/', {
+    lookup: async () => new Promise(() => {}),
+    lookupTimeoutMs: 10,
+  });
+  assert.equal(stalled.valid, false);
+  assert.equal(stalled.error, 'Unable to resolve URL hostname');
+});
+
+test('bounds the configured DNS lookup timeout', () => {
+  process.env.DNS_LOOKUP_TIMEOUT_MS = '1';
+  assert.equal(getDnsLookupTimeoutMs(), 100);
+  process.env.DNS_LOOKUP_TIMEOUT_MS = '99999';
+  assert.equal(getDnsLookupTimeoutMs(), 10_000);
+  delete process.env.DNS_LOOKUP_TIMEOUT_MS;
+});
+
+test('canonicalizes and blocks alternate loopback URL notations', async () => {
+  process.env.ALLOW_ANY_PUBLIC_DOMAIN = 'true';
+  process.env.ALLOWED_DOMAINS = '';
+  for (const url of ['http://2130706433/', 'http://0x7f000001/', 'http://[::ffff:7f00:1]/']) {
+    const result = await validateUrl(url);
+    assert.equal(result.status, 403, url);
+  }
   delete process.env.ALLOW_ANY_PUBLIC_DOMAIN;
 });

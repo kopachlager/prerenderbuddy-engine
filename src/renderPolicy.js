@@ -14,6 +14,10 @@ export function getMaxRedirects() {
   return boundedInteger(process.env.RENDER_MAX_REDIRECTS, 10, 0, 20);
 }
 
+export function getMaxBrowserRequests() {
+  return boundedInteger(process.env.RENDER_MAX_REQUESTS, 250, 10, 2_000);
+}
+
 export function getMaxRenderedHtmlBytes() {
   return boundedInteger(process.env.MAX_RENDERED_HTML_BYTES, 5_000_000, 100_000, 20_000_000);
 }

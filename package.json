@@ -33,8 +33,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test",
-    "test:coverage": "node --test --experimental-test-coverage",
+    "test": "node --test test/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
     "install:browsers": "playwright install chromium"
   },
   "dependencies": {
