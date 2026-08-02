@@ -2,7 +2,7 @@
 
 Review date: 2026-08-02
 
-Candidate: `0.1.0` pre-release
+Candidate: `0.1.1` corrective pre-release
 
 ## Decision
 
@@ -19,10 +19,10 @@ The operator, reverse proxy, host network, container runtime, DNS resolver, and 
 The production runtime has no analytics or outbound telemetry. Its outbound pathways are:
 
 1. `page.goto()` for the requested public HTTP(S) document.
-2. Browser HTTP(S) subresources required by that document.
+2. Browser HTTP(S) subresources required by that document, including requests initiated by popup pages.
 3. DNS lookup for the initial document and each intercepted HTTP(S) request.
 
-Before the initial browser navigation, the API validates protocol, credentials, exact configured hostname, hostname resolution, and every returned IP address. Browser routing repeats public-destination validation for HTTP(S) requests. Every top-level redirect hostname must also be explicitly allowlisted and remain on the original site, redirect hops are bounded, and the final page URL is checked again. Non-network browser URLs such as `data:` and `blob:` may run inside the isolated browser context but do not bypass an HTTP(S) fetch through the route guard.
+Before the initial browser navigation, the API validates protocol, credentials, exact configured hostname, hostname resolution, and every returned IP address. Browser-context routing is installed before the first page is created and repeats public-destination validation for HTTP(S) requests from every page. Every top-level navigation hostname must also be explicitly allowlisted and remain on the original site, redirect hops for the primary page are bounded, and the final page URL is checked again. Service workers are disabled because Playwright routing cannot intercept their network requests. WebSocket connections are closed by a context-level route without connecting upstream. Non-network browser URLs such as `data:` and `blob:` may run inside the isolated browser context but do not bypass an HTTP(S) fetch through the route guard.
 
 Subresources may use a different public hostname because modern sites depend on CDNs, fonts, APIs, and image hosts. They may not resolve to blocked address ranges. Operators requiring a narrower egress policy must enforce it at the container or network layer.
 
@@ -36,6 +36,7 @@ Subresources may use a different public hostname because modern sites depend on 
 | DNS stalls | Independent 100 ms–10 s lookup timeout | `test/urlPolicy.test.js` |
 | Redirect escape | Main-navigation host lock, bounded navigation requests, final-URL validation | Chromium integration matrix |
 | Hostile subresources | Per-request destination validation; blocked private/disallowed fixture | Chromium integration matrix |
+| Alternate browser egress | Context-level HTTP routing, disabled service workers, and non-connecting WebSocket routes | Chromium integration matrix |
 | Browser request storms | 10–2,000 request budget that terminates the render when exhausted | Chromium integration matrix |
 | Slow or oversized pages | Navigation timeout and rendered HTML byte ceiling | Unit and Chromium integration tests |
 | CPU/memory exhaustion | Global render concurrency, bounded cache entries/bytes, isolated browser contexts | Unit tests and self-hosting guide |
@@ -68,4 +69,4 @@ gitleaks detect --source . --no-git
 npm pack --dry-run
 ```
 
-The Chromium matrix covers static HTML, server-rendered metadata/content, hydrated app shells, same-site redirects, cross-site and excessive redirect blocks, 404/503 status preservation, blocked subresources, request storms, timeouts, oversized output, malformed responses, and SIGTERM shutdown.
+The Chromium matrix covers static HTML, server-rendered metadata/content, hydrated app shells, same-site redirects, cross-site and excessive redirect blocks, 404/503 status preservation, blocked subresources, popup/WebSocket/service-worker egress attempts, request storms, timeouts, oversized output, malformed responses, and SIGTERM shutdown.
