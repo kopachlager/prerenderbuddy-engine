@@ -10,6 +10,10 @@ export function getRenderTimeoutMs() {
   return boundedInteger(process.env.RENDER_TIMEOUT_MS, 20_000, 1_000, 120_000);
 }
 
+export function getMaxRedirects() {
+  return boundedInteger(process.env.RENDER_MAX_REDIRECTS, 10, 0, 20);
+}
+
 export function getMaxRenderedHtmlBytes() {
   return boundedInteger(process.env.MAX_RENDERED_HTML_BYTES, 5_000_000, 100_000, 20_000_000);
 }

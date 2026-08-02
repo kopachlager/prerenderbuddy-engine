@@ -50,6 +50,7 @@ See [Self-hosting](docs/self-hosting.md) for configuration, reverse-proxy exampl
 | Endpoint | Authentication | Purpose |
 | --- | --- | --- |
 | `GET /health` | None | Container liveness |
+| `GET /ready` | None | Browser readiness |
 | `GET /render?url=…` | Token | Render or read a cached document |
 | `POST /render` | Token | Render from a JSON request |
 | `GET /cache/read?url=…` | Token | Read a cached document without rendering |
@@ -67,7 +68,7 @@ The engine fails closed:
 - A token of at least 32 characters is required.
 - `ALLOWED_DOMAINS` is required unless `ALLOW_ANY_PUBLIC_DOMAIN=true` is explicitly set.
 - Localhost, private, link-local, reserved, multicast, and non-HTTP destinations are rejected.
-- Redirected top-level navigation cannot switch to another site.
+- Redirected top-level navigation cannot switch to another site and is limited to 10 hops by default.
 - Render concurrency, time, HTML size, cache entries, and cache bytes are bounded.
 - Browser CORS access is disabled unless exact origins are listed.
 

@@ -12,6 +12,7 @@ The container reads these environment variables:
 | `PORT` | `3000` | Container HTTP port |
 | `HEADLESS` | `true` | Keep enabled in normal operation |
 | `RENDER_TIMEOUT_MS` | `20000` | Bounded between 1 and 120 seconds |
+| `RENDER_MAX_REDIRECTS` | `10` | Bounded between 0 and 20 hops |
 | `RENDER_MAX_CONCURRENCY` | `4` | Bounded between 1 and 20 |
 | `MAX_RENDERED_HTML_BYTES` | `5000000` | Bounded between 100 KB and 20 MB |
 | `CACHE_TTL_SECONDS` | `1800` | Bounded between 1 second and 7 days |
@@ -20,6 +21,10 @@ The container reads these environment variables:
 | `ALLOWED_ORIGINS` | empty | Exact browser origins allowed by CORS |
 
 An entry in `ALLOWED_DOMAINS` permits only that exact hostname. List both apex and `www` hostnames if both should be rendered.
+
+## Resource baseline
+
+Start a single engine with 2 vCPU, 2 GB RAM, and the configured 1 GB shared-memory allocation. Page complexity matters more than URL count, so treat this as a starting point and measure representative workloads. Version 0.1 requires no Redis or external queue: its cache and duplicate-render coordination are deliberately process-local.
 
 ## Reverse proxy
 
@@ -45,6 +50,14 @@ docker compose ps
 ```
 
 Pin a release tag rather than `main` in production.
+
+## Troubleshooting
+
+- If `/health` fails, inspect `docker compose logs engine`; the HTTP process did not start.
+- If `/ready` returns 503, Chromium is not connected. Confirm the image and Playwright package versions match and that the container has enough memory.
+- A 401 response means the token header is absent or incorrect. A 403 normally means the hostname is not listed or resolves to a blocked network.
+- A 503 from `/render` means local concurrency is full; retry with backoff or lower upstream request pressure.
+- Repeated navigation timeouts usually require fixing the page's long-lived network requests or adjusting `RENDER_TIMEOUT_MS` after measuring the memory impact.
 
 ## Network hardening
 

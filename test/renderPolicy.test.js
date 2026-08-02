@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  getMaxRedirects,
   isCacheableDocumentStatus,
   resetRenderSlotsForTests,
   tryAcquireRenderSlot,
@@ -8,7 +9,15 @@ import {
 
 test.afterEach(() => {
   delete process.env.RENDER_MAX_CONCURRENCY;
+  delete process.env.RENDER_MAX_REDIRECTS;
   resetRenderSlotsForTests();
+});
+
+test('bounds redirect limits', () => {
+  process.env.RENDER_MAX_REDIRECTS = '999';
+  assert.equal(getMaxRedirects(), 20);
+  process.env.RENDER_MAX_REDIRECTS = '-1';
+  assert.equal(getMaxRedirects(), 0);
 });
 
 test('bounds concurrent renders', () => {

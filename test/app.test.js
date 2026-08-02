@@ -13,7 +13,7 @@ function app(renderer = async () => ({
   entry: { html: '<html><title>Rendered</title></html>', statusCode: 200, finalUrl: 'https://example.com/' },
   durationMs: 12,
 })) {
-  return createApp({ renderer, validateUrl: async () => validation });
+  return createApp({ renderer, validateUrl: async () => validation, isReady: () => true });
 }
 
 test.beforeEach(() => {
@@ -26,8 +26,15 @@ test.beforeEach(() => {
 
 test('health is public while render and metrics require authentication', async () => {
   await request(app()).get('/health').expect(200, { ok: true, service: '@prerenderbuddy/engine' });
+  await request(app()).get('/ready').expect(200, { ready: true });
   await request(app()).get('/render?url=https://example.com/').expect(401);
   await request(app()).get('/internal/metrics').expect(401);
+});
+
+test('readiness fails while the browser is unavailable', async () => {
+  const instance = createApp({ validateUrl: async () => validation, isReady: () => false });
+  await request(instance).get('/health').expect(200);
+  await request(instance).get('/ready').expect(503, { ready: false });
 });
 
 test('GET and POST render preserve status and cache output', async () => {

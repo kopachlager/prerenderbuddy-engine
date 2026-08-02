@@ -1,5 +1,6 @@
 import express from 'express';
 import { requireAuthorization } from './auth.js';
+import { isBrowserReady } from './browser.js';
 import * as cache from './cache.js';
 import { activeRenderFlights, joinRenderFlight } from './renderFlight.js';
 import {
@@ -40,10 +41,17 @@ export function createRoutes(options = {}) {
   const router = express.Router();
   const renderer = options.renderer || renderDocument;
   const urlValidator = options.validateUrl || validateUrl;
+  const readiness = options.isReady || isBrowserReady;
 
   router.get('/health', (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.json({ ok: true, service: '@prerenderbuddy/engine' });
+  });
+
+  router.get('/ready', (req, res) => {
+    const ready = readiness();
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(ready ? 200 : 503).json({ ready });
   });
 
   router.get('/internal/metrics', requireAuthorization, (req, res) => {

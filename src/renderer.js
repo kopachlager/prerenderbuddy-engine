@@ -1,5 +1,10 @@
 import { getBrowser } from './browser.js';
-import { getMaxRenderedHtmlBytes, getRenderTimeoutMs, normalizeDocumentStatus } from './renderPolicy.js';
+import {
+  getMaxRedirects,
+  getMaxRenderedHtmlBytes,
+  getRenderTimeoutMs,
+  normalizeDocumentStatus,
+} from './renderPolicy.js';
 import { validateUrl } from './urlPolicy.js';
 
 async function installRequestGuard(context, initialHostname) {
@@ -7,12 +12,25 @@ async function installRequestGuard(context, initialHostname) {
     const request = route.request();
     const requestUrl = request.url();
     if (!/^https?:/i.test(requestUrl)) return route.continue();
+    if (request.isNavigationRequest() && countRedirects(request) > getMaxRedirects()) {
+      return route.abort('blockedbyclient');
+    }
     const validation = await validateUrl(requestUrl, {
       enforceAllowedDomains: false,
       allowedNavigationHost: request.isNavigationRequest() ? initialHostname : null,
     });
     return validation.valid ? route.continue() : route.abort('blockedbyclient');
   });
+}
+
+export function countRedirects(request) {
+  let count = 0;
+  let previous = request.redirectedFrom?.();
+  while (previous) {
+    count += 1;
+    previous = previous.redirectedFrom?.();
+  }
+  return count;
 }
 
 export async function renderDocument(url, validatedHostname) {
