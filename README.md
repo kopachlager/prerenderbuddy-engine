@@ -12,7 +12,7 @@ This repository is the standalone engine. The managed [Prerender Buddy](https://
 Requirements: Docker Engine with Docker Compose.
 
 ```bash
-git clone https://github.com/kopachlager/prerenderbuddy-engine.git
+git clone --branch v0.1.1 --depth 1 https://github.com/kopachlager/prerenderbuddy-engine.git
 cd prerenderbuddy-engine
 cp .env.example .env
 openssl rand -hex 32
@@ -43,7 +43,7 @@ The API also accepts `POST /render` with JSON:
 {"url":"https://example.com/","ttlSeconds":1800}
 ```
 
-See [Self-hosting](docs/self-hosting.md) for configuration, reverse-proxy examples, updates, and operational guidance.
+See [Self-hosting](docs/self-hosting.md) for configuration, reverse-proxy examples, updates, and operational guidance. The complete request, response, header, and error contract is in the [API reference](docs/api.md); common crawler-routing patterns are in [Integration](docs/integration.md).
 
 Release tags, clean-artifact verification, and rollback steps are documented in [Releasing](docs/releasing.md).
 
@@ -74,6 +74,7 @@ The engine fails closed:
 - DNS resolution has its own timeout and every render has a bounded HTTP(S) request budget.
 - Render concurrency, time, HTML size, cache entries, and cache bytes are bounded.
 - Browser CORS access is disabled unless exact origins are listed.
+- Service workers are disabled and WebSocket connections are not permitted during rendering.
 
 Do not expose this container directly to the public internet. Put it behind a TLS reverse proxy or private network, keep the token server-side, and apply outbound firewall rules. Browser rendering untrusted pages is inherently risky; read [Security](SECURITY.md) before production use.
 

@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { closeBrowser, getBrowser } from './browser.js';
 import { assertValidConfiguration } from './config.js';
+import { ENGINE_VERSION } from './version.js';
 
 const port = Number(process.env.PORT || 3000);
 
@@ -10,7 +11,7 @@ async function start() {
 
   await getBrowser();
   const server = createApp().listen(port, '0.0.0.0', () => {
-    console.log(`Prerender Buddy Engine 0.1.0 listening on port ${port}`);
+    console.log(`Prerender Buddy Engine ${ENGINE_VERSION} listening on port ${port}`);
   });
 
   let shuttingDown = false;

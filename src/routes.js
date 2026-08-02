@@ -11,6 +11,7 @@ import {
 } from './renderPolicy.js';
 import { renderDocument } from './renderer.js';
 import { validateUrl } from './urlPolicy.js';
+import { ENGINE_VERSION } from './version.js';
 
 function cacheTtl(req) {
   return cache.normalizeTtlSeconds(
@@ -45,7 +46,7 @@ export function createRoutes(options = {}) {
 
   router.get('/health', (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
-    res.json({ ok: true, service: '@prerenderbuddy/engine' });
+    res.json({ ok: true, service: '@prerenderbuddy/engine', version: ENGINE_VERSION });
   });
 
   router.get('/ready', (req, res) => {

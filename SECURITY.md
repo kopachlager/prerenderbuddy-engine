@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are provided for the latest released minor version. Pre-1.0 releases may include breaking hardening changes.
+Security fixes are provided for the latest released version. Pre-1.0 releases may include breaking hardening changes.
 
 ## Reporting a vulnerability
 

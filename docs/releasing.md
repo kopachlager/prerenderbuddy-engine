@@ -9,7 +9,7 @@ Release only from a clean, protected `main` branch after:
 1. The Node 20, 22, and 24 jobs and the container job pass on `main`.
 2. `package.json` and `CHANGELOG.md` contain the intended version and date.
 3. Security, self-hosting, upgrade, troubleshooting, and known-limit documentation is current.
-4. Dependency, secret, license, package-content, and clean-artifact checks have been reviewed.
+4. Dependency, secret, license, static-analysis, container-vulnerability, package-content, and clean-artifact checks have been reviewed.
 5. A rollback owner and the previously known-good tag or commit are recorded.
 
 ## Create a release
@@ -20,11 +20,11 @@ Create one annotated tag from the exact `main` commit that passed the gate:
 git switch main
 git pull --ff-only
 git status --short
-git tag -a v0.1.0 -m "Prerender Buddy Engine 0.1.0 alpha"
-git push origin v0.1.0
+git tag -a v0.1.1 -m "Prerender Buddy Engine 0.1.1 alpha"
+git push origin v0.1.1
 ```
 
-Pushing a `v*` tag starts the tagged-artifact workflow. The workflow reconstructs the repository with `git archive`, performs a fresh install, runs unit and real-Chromium integration tests, audits dependencies, builds and smoke-tests the runtime image, then publishes a GitHub prerelease with the tested source archive and SHA-256 checksum.
+Pushing a `v*` tag starts the tagged-artifact workflow. The workflow reconstructs the repository with `git archive`, performs a fresh install, runs unit and real-Chromium integration tests, audits dependencies, builds and smoke-tests the runtime image, generates an SPDX dependency SBOM and checksums, creates GitHub build-provenance attestations, then publishes the prerelease.
 
 Do not create the GitHub Release manually while that workflow is running. If the workflow fails, leave the tag without a release, diagnose the failure, and never move or overwrite the published tag. Fix the issue on `main` and issue the next semantic version.
 
@@ -33,13 +33,16 @@ Do not create the GitHub Release manually while that workflow is running. If the
 Download the release archive and checksum into an empty temporary directory:
 
 ```bash
-gh release download v0.1.0 \
+gh release download v0.1.1 \
   --repo kopachlager/prerenderbuddy-engine \
-  --pattern 'prerenderbuddy-engine-0.1.0.tar.gz' \
+  --pattern 'prerenderbuddy-engine-0.1.1.tar.gz' \
+  --pattern 'prerenderbuddy-engine-0.1.1.spdx.json' \
   --pattern 'SHA256SUMS'
 sha256sum --check SHA256SUMS
-tar -xzf prerenderbuddy-engine-0.1.0.tar.gz
-cd prerenderbuddy-engine-0.1.0
+gh attestation verify prerenderbuddy-engine-0.1.1.tar.gz --repo kopachlager/prerenderbuddy-engine
+gh attestation verify prerenderbuddy-engine-0.1.1.spdx.json --repo kopachlager/prerenderbuddy-engine
+tar -xzf prerenderbuddy-engine-0.1.1.tar.gz
+cd prerenderbuddy-engine-0.1.1
 cp .env.example .env
 ```
 
@@ -57,4 +60,4 @@ Render one allowed representative page from a trusted server-side client, inspec
 
 The engine stores cache data only in memory, so rollback does not require a schema migration. Stop the new container, redeploy the previously recorded tag or commit with the prior environment configuration, verify `/health` and `/ready`, and test a representative render before restoring crawler traffic. Preserve failed-container logs and the release workflow URL for the incident record.
 
-For the first alpha, the rollback target is the last reviewed pre-tag `main` commit. After the first release, always record a previously verified tag before deployment.
+For `0.1.1`, the rollback target is `v0.1.0` only if its browser-egress limitation is acceptable behind the operator's network controls; otherwise stop rendering while correcting the deployment. For later releases, always record a previously verified tag before deployment.

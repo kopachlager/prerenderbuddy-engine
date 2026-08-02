@@ -8,6 +8,8 @@ Thank you for helping improve the self-hosted engine.
 4. Add or update tests for behavior changes.
 5. Open a pull request describing the problem, design, risks, and verification.
 
+Keep behavioral, dependency, and documentation changes focused enough to review independently. Pull requests that alter browser networking or URL validation must include a real-Chromium regression and update `docs/security-review.md`.
+
 Contributions must stay within the standalone engine boundary. Managed-service routing, billing, private operational configuration, customer data, and credentials do not belong in this repository.
 
 By submitting a contribution, you agree that it is licensed under Apache-2.0 as described in section 5 of the license.
@@ -19,3 +21,5 @@ docker build --target test -t prerenderbuddy/engine:test .
 docker run --rm --shm-size=1g prerenderbuddy/engine:test
 docker build --target runtime -t prerenderbuddy/engine:local .
 ```
+
+The required CI matrix runs unit tests on Node 20, 22, and 24, audits production dependencies, builds the runtime container, executes the Chromium fixture suite, and smoke-tests readiness. Do not weaken or bypass a failing check to merge a change.
