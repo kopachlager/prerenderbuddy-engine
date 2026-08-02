@@ -12,6 +12,8 @@ Contributions must stay within the standalone engine boundary. Managed-service r
 
 By submitting a contribution, you agree that it is licensed under Apache-2.0 as described in section 5 of the license.
 
+Maintainer release steps and rollback requirements are documented in [Releasing](docs/releasing.md). Do not move or overwrite a published release tag.
+
 ```bash
 docker build --target test -t prerenderbuddy/engine:test .
 docker run --rm --shm-size=1g prerenderbuddy/engine:test

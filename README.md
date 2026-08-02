@@ -45,6 +45,8 @@ The API also accepts `POST /render` with JSON:
 
 See [Self-hosting](docs/self-hosting.md) for configuration, reverse-proxy examples, updates, and operational guidance.
 
+Release tags, clean-artifact verification, and rollback steps are documented in [Releasing](docs/releasing.md).
+
 ## API
 
 | Endpoint | Authentication | Purpose |
