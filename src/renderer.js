@@ -29,8 +29,9 @@ async function installRequestGuard(page, initialHostname, urlValidator) {
     requestCount += 1;
     if (requestCount > getMaxBrowserRequests()) {
       policyError = createRequestLimitError();
-      void page.close().catch(() => {});
-      return route.abort('blockedbyclient');
+      await route.abort('blockedbyclient').catch(() => {});
+      await page.close().catch(() => {});
+      return undefined;
     }
     if (isDocumentNavigation && countRedirects(request) > getMaxRedirects()) {
       policyError = createNavigationBlockedError();
