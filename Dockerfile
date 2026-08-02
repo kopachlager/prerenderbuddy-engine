@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f281
 WORKDIR /app
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-ARG ENGINE_VERSION=0.1.2
+ARG ENGINE_VERSION=0.1.3
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.title="Prerender Buddy Engine" \
       org.opencontainers.image.description="Secure self-hosted crawler rendering engine" \

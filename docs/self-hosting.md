@@ -6,16 +6,16 @@ Install an immutable, reviewed release image rather than a moving branch:
 
 ```bash
 curl --fail --location --output docker-compose.yml \
-  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/docker-compose.yml
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.3/docker-compose.yml
 curl --fail --location --output .env.example \
-  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/prerenderbuddy.env.example
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.3/prerenderbuddy.env.example
 cp .env.example .env
 openssl rand -hex 32
 ```
 
 Put the generated value in `PRERENDER_TOKEN`, set exact hostnames in `ALLOWED_DOMAINS`, then run `docker compose pull && docker compose up -d`. Confirm both `docker compose ps` and `curl --fail http://127.0.0.1:3000/ready` before sending traffic.
 
-The Compose file defaults to `ghcr.io/kopachlager/prerenderbuddy-engine:v0.1.2`. Set `ENGINE_IMAGE_TAG` only when deliberately testing another published tag. To build locally, clone the matching release tag and run `docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d`.
+The Compose file defaults to `ghcr.io/kopachlager/prerenderbuddy-engine:v0.1.3`. Set `ENGINE_IMAGE_TAG` only when deliberately testing another published tag. To build locally, clone the matching release tag and run `docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d`.
 
 ## Configuration
 
@@ -65,7 +65,7 @@ Back up `.env`, record the current tag, and review the target release notes. Upg
 
 ```bash
 curl --fail --location --output docker-compose.yml \
-  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/docker-compose.yml
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.3/docker-compose.yml
 docker compose pull
 docker compose up -d
 docker compose ps

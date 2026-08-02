@@ -15,9 +15,9 @@ Requirements: Docker Engine with Docker Compose.
 
 ```bash
 curl --fail --location --output docker-compose.yml \
-  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/docker-compose.yml
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.3/docker-compose.yml
 curl --fail --location --output .env.example \
-  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.2/prerenderbuddy.env.example
+  https://github.com/kopachlager/prerenderbuddy-engine/releases/download/v0.1.3/prerenderbuddy.env.example
 cp .env.example .env
 openssl rand -hex 32
 ```

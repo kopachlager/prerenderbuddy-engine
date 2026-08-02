@@ -1,6 +1,6 @@
 services:
   engine:
-    image: ghcr.io/kopachlager/prerenderbuddy-engine:${ENGINE_IMAGE_TAG:-v0.1.2}
+    image: ghcr.io/kopachlager/prerenderbuddy-engine:${ENGINE_IMAGE_TAG:-v0.1.3}
     init: true
     restart: unless-stopped
     env_file:

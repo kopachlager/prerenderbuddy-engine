@@ -20,8 +20,8 @@ Create one annotated tag from the exact `main` commit that passed the gate:
 git switch main
 git pull --ff-only
 git status --short
-git tag -a v0.1.2 -m "Prerender Buddy Engine 0.1.2 alpha"
-git push origin v0.1.2
+git tag -a v0.1.3 -m "Prerender Buddy Engine 0.1.3 alpha"
+git push origin v0.1.3
 ```
 
 Pushing a `v*` tag starts the tagged-artifact workflow. The workflow reconstructs the repository with `git archive`, performs a fresh install, runs unit and real-Chromium integration tests, audits dependencies, builds and smoke-tests the runtime image, publishes a public immutable multi-architecture GHCR image with provenance and an SBOM, verifies both supported platforms without registry authentication, generates a dependency SBOM and checksums for the downloadable assets, creates GitHub build-provenance attestations, then publishes the prerelease.
@@ -33,16 +33,16 @@ Do not create the GitHub Release manually while that workflow is running. If the
 Download the release archive and checksum into an empty temporary directory:
 
 ```bash
-gh release download v0.1.2 \
+gh release download v0.1.3 \
   --repo kopachlager/prerenderbuddy-engine \
-  --pattern 'prerenderbuddy-engine-0.1.2.tar.gz' \
-  --pattern 'prerenderbuddy-engine-0.1.2.spdx.json' \
+  --pattern 'prerenderbuddy-engine-0.1.3.tar.gz' \
+  --pattern 'prerenderbuddy-engine-0.1.3.spdx.json' \
   --pattern 'docker-compose.yml' \
   --pattern 'prerenderbuddy.env.example' \
   --pattern 'SHA256SUMS'
 sha256sum --check SHA256SUMS
-gh attestation verify prerenderbuddy-engine-0.1.2.tar.gz --repo kopachlager/prerenderbuddy-engine
-gh attestation verify prerenderbuddy-engine-0.1.2.spdx.json --repo kopachlager/prerenderbuddy-engine
+gh attestation verify prerenderbuddy-engine-0.1.3.tar.gz --repo kopachlager/prerenderbuddy-engine
+gh attestation verify prerenderbuddy-engine-0.1.3.spdx.json --repo kopachlager/prerenderbuddy-engine
 cp prerenderbuddy.env.example .env
 ```
 
