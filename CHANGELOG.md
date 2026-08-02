@@ -2,11 +2,14 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the initial pre-1.0 stabilization period.
 
-## Unreleased
+## 0.1.1 - 2026-08-02
 
 - Move HTTP(S) interception to the browser context so the first request from a popup cannot bypass destination validation.
 - Block browser WebSocket connections and disable service workers to keep every supported outbound path inside the render policy.
 - Add real Chromium regressions that verify popup, WebSocket, and service-worker attempts cannot reach a private probe server.
+- Pin the Playwright container and GitHub Actions, add static analysis and container scanning, and attest tagged source artifacts.
+- Publish an SBOM with tagged releases and expose consistent version metadata through the API and container labels.
+- Expand tag-based install, upgrade, API, integration, support, and contribution documentation.
 
 ## 0.1.0 - 2026-08-02
 

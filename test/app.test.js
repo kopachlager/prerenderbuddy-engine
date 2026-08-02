@@ -5,6 +5,7 @@ import { createApp } from '../src/app.js';
 import * as cache from '../src/cache.js';
 import { resetRenderFlightsForTests } from '../src/renderFlight.js';
 import { resetRenderSlotsForTests } from '../src/renderPolicy.js';
+import { ENGINE_VERSION } from '../src/version.js';
 
 const token = 'test-token-that-is-longer-than-32-characters';
 const validation = { valid: true, url: new URL('https://example.com/'), hostname: 'example.com' };
@@ -25,7 +26,9 @@ test.beforeEach(() => {
 });
 
 test('health is public while render and metrics require authentication', async () => {
-  await request(app()).get('/health').expect(200, { ok: true, service: '@prerenderbuddy/engine' });
+  await request(app()).get('/health').expect(200, {
+    ok: true, service: '@prerenderbuddy/engine', version: ENGINE_VERSION,
+  });
   await request(app()).get('/ready').expect(200, { ready: true });
   await request(app()).get('/render?url=https://example.com/').expect(401);
   await request(app()).get('/internal/metrics').expect(401);

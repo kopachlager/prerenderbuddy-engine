@@ -1,5 +1,18 @@
 # Self-hosting
 
+## Install
+
+Install a reviewed release tag, not a moving branch:
+
+```bash
+git clone --branch v0.1.1 --depth 1 https://github.com/kopachlager/prerenderbuddy-engine.git
+cd prerenderbuddy-engine
+cp .env.example .env
+openssl rand -hex 32
+```
+
+Put the generated value in `PRERENDER_TOKEN`, set exact hostnames in `ALLOWED_DOMAINS`, then run `docker compose up --build -d`. Confirm both `docker compose ps` and `curl --fail http://127.0.0.1:3000/ready` before sending traffic.
+
 ## Configuration
 
 The container reads these environment variables:
@@ -10,11 +23,13 @@ The container reads these environment variables:
 | `ALLOWED_DOMAINS` | none | Required exact hostnames unless unrestricted mode is explicitly enabled |
 | `ALLOW_ANY_PUBLIC_DOMAIN` | `false` | High-risk opt-in for rendering any public hostname |
 | `PORT` | `3000` | Container HTTP port |
+| `ENGINE_PORT` | `3000` | Host-only Compose port; used by `docker-compose.yml`, not the Node process |
 | `HEADLESS` | `true` | Keep enabled in normal operation |
 | `RENDER_TIMEOUT_MS` | `20000` | Bounded between 1 and 120 seconds |
 | `RENDER_MAX_REDIRECTS` | `10` | Bounded between 0 and 20 hops |
 | `RENDER_MAX_REQUESTS` | `250` | Bounded between 10 and 2,000 HTTP(S) requests; exhaustion terminates the render |
 | `RENDER_MAX_CONCURRENCY` | `4` | Bounded between 1 and 20 |
+| `RENDER_SINGLE_FLIGHT_WAIT_MS` | `30000` | Maximum time a duplicate request waits for the active render; bounded between 1 and 60 seconds |
 | `MAX_RENDERED_HTML_BYTES` | `5000000` | Bounded between 100 KB and 20 MB |
 | `CACHE_TTL_SECONDS` | `1800` | Bounded between 1 second and 7 days |
 | `CACHE_MAX_ENTRIES` | `500` | Bounded between 1 and 10,000 |
@@ -42,16 +57,18 @@ The cache is process-local and disappears when the container restarts. Run one i
 
 ## Updates
 
-Back up `.env`, review release notes, then rebuild:
+Back up `.env`, record the current tag, and review the target release notes. Upgrade explicitly between immutable tags:
 
 ```bash
-git pull --ff-only
+git fetch --tags --prune
+git switch --detach v0.1.1
 docker compose build --pull
 docker compose up -d
 docker compose ps
+curl --fail http://127.0.0.1:3000/ready
 ```
 
-Pin a release tag rather than `main` in production.
+Render one representative allowed URL before restoring crawler traffic. To roll back, switch to the recorded prior tag and repeat the build and readiness checks. The cache is memory-only, so there is no data migration.
 
 ## Troubleshooting
 

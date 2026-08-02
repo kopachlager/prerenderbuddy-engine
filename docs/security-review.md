@@ -42,7 +42,8 @@ Subresources may use a different public hostname because modern sites depend on 
 | CPU/memory exhaustion | Global render concurrency, bounded cache entries/bytes, isolated browser contexts | Unit tests and self-hosting guide |
 | Error poisoning | Only 2xx/3xx and durable 404/410 documents are cached | `test/renderPolicy.test.js` |
 | Cross-origin browser callers | CORS disabled by default; exact origins only | `test/app.test.js` |
-| Container privilege | Non-root runtime user and `no-new-privileges` Compose option | Docker inspection and CI smoke test |
+| Container privilege | Non-root runtime user, read-only filesystem, dropped capabilities, bounded temporary storage, and `no-new-privileges` | Docker inspection and CI smoke test |
+| Supply-chain substitution | Digest-pinned base image, commit-pinned Actions, SBOM, checksums, and GitHub provenance | Tagged release workflow |
 | Secret/private-code publication | Clean repository history, Gitleaks, package inventory, manual boundary scan | Release gate |
 
 ## Residual risks and required operator controls
