@@ -13,7 +13,7 @@ updates:
       interval: weekly
     groups:
       codeql-action:
-        patterns: ["github/codeql-action"]
+        patterns: ["github/codeql-action/*"]
   - package-ecosystem: docker
     directory: /
     schedule:
