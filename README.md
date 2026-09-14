@@ -3,7 +3,7 @@
 [![CI](https://github.com/kopachlager/prerenderbuddy-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/kopachlager/prerenderbuddy-engine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-A secure, self-hosted rendering engine that turns JavaScript applications into crawler-readable HTML. It uses Playwright Chromium, keeps a bounded in-memory cache, coalesces duplicate requests, and preserves the rendered document's HTTP status.
+The self-hosted crawler-rendering component of the Prerender Buddy AI visibility and crawler-readiness platform. It securely turns JavaScript applications into crawler-readable HTML using Playwright Chromium, keeps a bounded in-memory cache, coalesces duplicate requests, and preserves the rendered document's HTTP status.
 
 The supported distribution is the versioned Docker image published on GitHub Container Registry. The Node package metadata is private and is not an npm installation interface.
 
