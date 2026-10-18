@@ -74,3 +74,31 @@ test('separate engine instances do not share their in-memory request budgets', a
   await request(first).get('/render').expect(429);
   await request(second).get('/render').expect(401);
 });
+
+test('malformed JSON consumes the budget before body parsing can reject it', async () => {
+  const app = limitedApp(1);
+  await request(app).post('/render').set('Content-Type', 'application/json').send('{').expect(400);
+  await request(app).post('/render').set('Content-Type', 'application/json').send('{').expect(429);
+});
+
+test('oversized bodies consume the budget and return a stable client error', async () => {
+  const app = limitedApp(1);
+  await request(app).post('/render').send({ url: 'x'.repeat(20_000) }).expect(413, { error: 'Request body exceeds the 16 KB limit' });
+  await request(app).post('/render').send({ url: 'x'.repeat(20_000) }).expect(429);
+});
+
+test('allowed browser origins can read rate-limit and retry headers on 429', async (t) => {
+  const previous = process.env.ALLOWED_ORIGINS;
+  process.env.ALLOWED_ORIGINS = 'https://ui.example.com';
+  t.after(() => {
+    if (previous === undefined) delete process.env.ALLOWED_ORIGINS;
+    else process.env.ALLOWED_ORIGINS = previous;
+  });
+  const app = limitedApp(1);
+  await request(app).get('/render').set('Origin', 'https://ui.example.com').expect(401);
+  const response = await request(app).get('/render').set('Origin', 'https://ui.example.com').expect(429);
+  assert.equal(response.headers['access-control-allow-origin'], 'https://ui.example.com');
+  const exposed = response.headers['access-control-expose-headers'].split(',').map((name) => name.trim());
+  for (const name of ['Retry-After', 'RateLimit', 'RateLimit-Policy']) assert.ok(exposed.includes(name));
+  assert.ok(Number(response.headers['retry-after']) > 0);
+});

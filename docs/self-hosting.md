@@ -46,7 +46,7 @@ An entry in `ALLOWED_DOMAINS` permits only that exact hostname. List both apex a
 
 ## Request-rate protection (unreleased)
 
-The maintenance branch adds a shared one-minute budget for `/render`, `/cache/read`, `/cache/clear`, and `/internal/metrics`. It counts both successful and rejected authentication attempts before protected work runs. The default is 600 requests per minute across all callers and those endpoints together; tune `REQUESTS_PER_MINUTE` to your workload. `/health` and `/ready` remain outside the budget so orchestrator probes keep working.
+The maintenance branch adds a shared one-minute budget before JSON parsing and authorization. It covers `/render`, `/cache/read`, `/cache/clear`, `/internal/metrics`, and unknown non-probe requests. It counts both successful and rejected authentication attempts before protected work runs. The default is 600 requests per minute across all callers and those endpoints together; tune `REQUESTS_PER_MINUTE` to your workload. `/health` and `/ready` remain outside the budget so orchestrator probes keep working.
 
 Exhausted requests return `429` JSON with `Retry-After`, `RateLimit` and `RateLimit-Policy` headers. Follow the retry delay with bounded backoff. Each process has its own in-memory budget, which resets on restart. The engine does not trust client-supplied forwarding headers to create new budgets, retain client IPs, or maintain per-IP buckets. Keep external proxy limits and private ingress in place, especially when running multiple replicas. Published `v0.1.3` does not contain this new control.
 
