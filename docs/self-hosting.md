@@ -29,6 +29,7 @@ The container reads these environment variables:
 | `PORT` | `3000` | Container HTTP port |
 | `ENGINE_PORT` | `3000` | Host-only Compose port; used by `docker-compose.yml`, not the Node process |
 | `HEADLESS` | `true` | Keep enabled in normal operation |
+| `REQUESTS_PER_MINUTE` | `600` | Unreleased: shared protected-API budget per process; integer from 1 to 1,000,000 |
 | `RENDER_TIMEOUT_MS` | `20000` | Bounded between 1 and 120 seconds |
 | `RENDER_MAX_REDIRECTS` | `10` | Bounded between 0 and 20 hops |
 | `RENDER_MAX_REQUESTS` | `250` | Bounded between 10 and 2,000 HTTP(S) requests; exhaustion terminates the render |
@@ -42,6 +43,12 @@ The container reads these environment variables:
 | `DNS_LOOKUP_TIMEOUT_MS` | `2000` | Bounded between 100 ms and 10 seconds |
 
 An entry in `ALLOWED_DOMAINS` permits only that exact hostname. List both apex and `www` hostnames if both should be rendered.
+
+## Request-rate protection (unreleased)
+
+The maintenance branch adds a shared one-minute budget before JSON parsing and authorization. It covers `/render`, `/cache/read`, `/cache/clear`, `/internal/metrics`, and unknown non-probe requests. It counts both successful and rejected authentication attempts before protected work runs. The default is 600 requests per minute across all callers and those endpoints together; tune `REQUESTS_PER_MINUTE` to your workload. `/health` and `/ready` remain outside the budget so orchestrator probes keep working.
+
+Exhausted requests return `429` JSON with `Retry-After`, `RateLimit` and `RateLimit-Policy` headers. Follow the retry delay with bounded backoff. Each process has its own in-memory budget, which resets on restart. The engine does not trust client-supplied forwarding headers to create new budgets, retain client IPs, or maintain per-IP buckets. Keep external proxy limits and private ingress in place, especially when running multiple replicas. Published `v0.1.3` does not contain this new control.
 
 ## Resource baseline
 

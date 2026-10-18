@@ -30,3 +30,15 @@ test('configuration rejects wildcard and URL-shaped domain entries', () => {
     assert.equal(result.valid, false, domain);
   }
 });
+
+test('request rate limit defaults and explicit values are validated at startup', () => {
+  const base = { PRERENDER_TOKEN: 'a'.repeat(32), ALLOWED_DOMAINS: 'example.com' };
+  for (const REQUESTS_PER_MINUTE of ['1', '600', '1000000']) {
+    assert.equal(validateConfiguration({ ...base, REQUESTS_PER_MINUTE }).valid, true);
+  }
+  for (const REQUESTS_PER_MINUTE of ['0', '-1', '1.5', 'invalid', '1000001']) {
+    const result = validateConfiguration({ ...base, REQUESTS_PER_MINUTE });
+    assert.equal(result.valid, false, REQUESTS_PER_MINUTE);
+    assert.match(result.errors[0], /REQUESTS_PER_MINUTE/);
+  }
+});

@@ -2,6 +2,14 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the initial pre-1.0 stabilization period.
 
+## Unreleased
+
+- Align the Playwright npm package and digest-pinned browser container at 1.64.0 so Chromium fixtures use the matching executable.
+- Update proxy-addr to 2.0.8, refresh Ubuntu packages during image builds, and update the supertest test dependency.
+- Refresh pinned Node setup, Docker build/push, Buildx, QEMU and CodeQL actions.
+- Limit protected API requests before authentication with a configurable per-process budget, preserving public health/readiness probes and the required external proxy controls.
+- Check package/container Playwright alignment in the unit suite to prevent independent updates from breaking browser startup.
+
 ## 0.1.3 - 2026-08-03
 
 - Verify public GHCR access with an anonymous registry token instead of attempting to change user-package visibility with a repository-scoped workflow token.

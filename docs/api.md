@@ -12,6 +12,10 @@ The engine exposes an HTTP API on port `3000` by default. Except for liveness an
 
 `GET /ready` returns `200 {"ready":true}` when Chromium is connected, or `503 {"ready":false}`. These endpoints intentionally require no token so container orchestrators can call them.
 
+## Request-rate protection (unreleased)
+
+All non-probe API requests share a per-process budget configured by `REQUESTS_PER_MINUTE` (default 600 per minute). Authentication failures also consume it. A rejected request returns `429 {"error":"Request rate limit exceeded"}` and a `Retry-After` header. `RateLimit` and `RateLimit-Policy` describe the shared budget. Liveness/readiness are exempt. This control is in the maintenance branch and is not included in published `v0.1.3`.
+
 ## Render
 
 Use either `GET /render?url=<encoded-url>` or:
@@ -52,10 +56,11 @@ JSON errors use `{"error":"message"}`. Stable statuses are:
 | `401` | Missing or incorrect token |
 | `403` | Destination, redirect, CORS preflight, or navigation rejected by policy |
 | `404` | Unknown endpoint or cache miss; a render may also preserve an origin `404` as HTML |
-| `413` | Rendered HTML exceeds the configured limit |
+| `413` | Request body exceeds 16 KB, or rendered HTML exceeds the configured limit |
 | `422` | Per-render browser request budget exhausted |
+| `429` | Protected API request budget exhausted (unreleased) |
 | `500` | Browser or unexpected render failure |
 | `503` | Chromium not ready, render capacity reached, or coalescing wait exceeded |
 | `504` | Render timed out |
 
-Capacity responses may include `Retry-After`. Clients should retry `503` and `504` only with bounded exponential backoff and jitter. Do not retry policy `403`, size `413`, or request-budget `422` responses without changing the request or configuration.
+Honor `Retry-After` on `429` before retrying. Capacity responses may include `Retry-After`. Clients should retry `503` and `504` only with bounded exponential backoff and jitter. Do not retry policy `403`, size `413`, or request-budget `422` responses without changing the request or configuration.

@@ -21,6 +21,15 @@ export function getAllowedOrigins() {
   return parseCsv(process.env.ALLOWED_ORIGINS);
 }
 
+export function getRequestsPerMinute(env = process.env) {
+  const value = env.REQUESTS_PER_MINUTE;
+  const limit = value === undefined || value === '' ? 600 : Number(value);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 1_000_000) {
+    throw new Error('REQUESTS_PER_MINUTE must be an integer between 1 and 1000000');
+  }
+  return limit;
+}
+
 export function validateConfiguration(env = process.env) {
   const errors = [];
   const token = String(env.PRERENDER_TOKEN || '');
@@ -34,6 +43,12 @@ export function validateConfiguration(env = process.env) {
   }
   if (domains.some((domain) => /[*/\s]/.test(domain) || domain.includes('://'))) {
     errors.push('ALLOWED_DOMAINS must contain exact hostnames without wildcards, protocols, paths, or spaces');
+  }
+
+  try {
+    getRequestsPerMinute(env);
+  } catch (error) {
+    errors.push(error.message);
   }
 
   return { valid: errors.length === 0, errors };

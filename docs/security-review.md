@@ -71,3 +71,13 @@ npm pack --dry-run
 ```
 
 The Chromium matrix covers static HTML, server-rendered metadata/content, hydrated app shells, same-site redirects, cross-site and excessive redirect blocks, 404/503 status preservation, blocked subresources, popup/WebSocket/service-worker egress attempts, request storms, timeouts, oversized output, malformed responses, and SIGTERM shutdown.
+
+## Maintenance review — 2026-10-18 (unreleased)
+
+The maintenance branch aligns the Playwright package and digest-pinned browser image at 1.64.0, retains the patched proxy-addr 2.0.8 dependency, and refreshes Ubuntu packages while building both container stages. The dependency, Node, real-Chromium, runtime vulnerability and readiness gates remain required. Published v0.1.3 and its immutable tag are unchanged.
+
+Authenticated endpoints now share an explicit process-local request-rate limiter, before JSON parsing, authorization, URL validation or browser allocation. It includes unsuccessful token attempts and returns 429 with Retry-After. One constant budget key avoids trusting forwarded IP headers or allocating attacker-controlled per-client buckets. The default is 600 protected requests per minute, configurable with startup validation. Health/readiness do not consume that budget. This addresses the common missing-rate-limiting finding on the five authenticated route variants without dismissing the alerts or treating render concurrency as a request-rate control.
+
+Malformed JSON and oversized bodies consume the same budget; oversized request bodies return a stable 413 response. Allowed browser origins can read Retry-After, RateLimit and RateLimit-Policy through the existing CORS boundary.
+
+The limiter is an additional local protection. It does not replace private ingress, TLS, reverse-proxy limits, host resource limits or egress controls. Its counter is local to each process and resets on restart; multiple engine replicas do not share a distributed budget. No managed-service routing or infrastructure is part of this change.
