@@ -1,4 +1,6 @@
 import express from 'express';
+import { rateLimit } from 'express-rate-limit';
+import { getRequestsPerMinute } from './config.js';
 import { requireAuthorization } from './auth.js';
 import { isBrowserReady } from './browser.js';
 import * as cache from './cache.js';
@@ -55,7 +57,19 @@ export function createRoutes(options = {}) {
     res.status(ready ? 200 : 503).json({ ready });
   });
 
-  router.get('/internal/metrics', requireAuthorization, (req, res) => {
+  // One process/token owns one shared budget across all protected endpoints.
+  // Do not trust forwarded IP headers or create unbounded per-client buckets.
+  const requestLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: getRequestsPerMinute(),
+    keyGenerator: () => 'engine',
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    identifier: 'engine-requests',
+    message: { error: 'Request rate limit exceeded' },
+  });
+
+  router.get('/internal/metrics', requestLimiter, requireAuthorization, (req, res) => {
     res.setHeader('Cache-Control', 'private, no-store');
     res.json({
       observedAt: new Date().toISOString(),
@@ -136,10 +150,10 @@ export function createRoutes(options = {}) {
     }
   }
 
-  router.get('/render', requireAuthorization, handleRender);
-  router.post('/render', requireAuthorization, handleRender);
+  router.get('/render', requestLimiter, requireAuthorization, handleRender);
+  router.post('/render', requestLimiter, requireAuthorization, handleRender);
 
-  router.get('/cache/read', requireAuthorization, async (req, res) => {
+  router.get('/cache/read', requestLimiter, requireAuthorization, async (req, res) => {
     const url = req.query.url;
     if (!url || typeof url !== 'string') return res.status(400).json({ error: 'Missing url' });
     const validation = await urlValidator(url);
@@ -151,7 +165,7 @@ export function createRoutes(options = {}) {
     return res.status(cached.statusCode).send(cached.html);
   });
 
-  router.post('/cache/clear', requireAuthorization, async (req, res) => {
+  router.post('/cache/clear', requestLimiter, requireAuthorization, async (req, res) => {
     const url = req.body?.url;
     if (!url || typeof url !== 'string') return res.status(400).json({ error: 'Missing url' });
     const validation = await urlValidator(url);
